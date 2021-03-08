@@ -51,11 +51,9 @@ jobs:
           # Server address of Docker registry. If not set then will default to Docker Hub
           registry: ${{ secrets.DOCKER_REPO }}
           # Username used to log against the Docker registry
-          username:  ${{ secrets.DOCKER_USERNAME }}
+          username: ${{ secrets.DOCKER_USERNAME }}
           # Password or personal access token used to log against the Docker registry
           password: ${{ secrets.DOCKER_PASSWORD }}
-          # Log out from the Docker registry at the end of a job
-          logout: true
       - name: Build Docker image
         run: docker build -t $REPO:latest -t $REPO:${GITHUB_SHA::8} .
       - name: Publish Docker image
