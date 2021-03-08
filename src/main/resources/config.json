@@ -1,0 +1,17 @@
+{
+  "database" : {
+    "host": "localhost",
+    "port":5432,
+    "database": "users",
+    "user" : "admin",
+    "password": "admin"
+  },
+  "idp": {
+    "serverUrl" : "http://localhost:8080/auth",
+    "realm": "tdc-innovation",
+    "client_id" : "realm-management",
+    "client_secret" : "0d03f8fc-352e-49e8-b7e0-2bc06a36b268",
+    "user" : "admin",
+    "password" : "admin"
+  }
+}

@@ -1,0 +1,178 @@
+openapi: 3.0.3
+info:
+  title: users
+  version: '1.0'
+  description: API to create users on chat systems
+  contact:
+    name: Claudio E. de Oliveira
+    url: 'https://claudioed.tech'
+    email: claudioed.oliveira@gmail.com
+  license:
+    name: MIT
+tags:
+  - name: users
+    description: Users API's
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  '/users/{userId}':
+    parameters:
+      - schema:
+          type: string
+        name: userId
+        in: path
+        required: true
+        description: Id of an existing user.
+    get:
+      summary: Get User Info by User ID
+      tags:
+        - users
+      responses:
+        '200':
+          description: User Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              examples:
+                Get User Alice Smith:
+                  value:
+                    id: 2c16a74f-d852-4505-8330-572900cee088
+                    firstName: Alice
+                    lastName: Smith
+                    email: alice.smith@gmail.com
+                    emailVerified: true
+                    blocked: false
+        '404':
+          description: User Not Found
+      operationId: get-users-userId
+      description: Retrieve the information of the user with the matching user ID.
+    patch:
+      summary: Update user data to blocked or non-blocked
+      tags:
+        - users
+      operationId: update-user
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdatedUser'
+      description: Update user data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlockUser'
+        description: Update user status (blocked or non-blocked)
+  /users:
+    post:
+      summary: Create New User
+      operationId: create-user
+      tags:
+        - users
+      responses:
+        '200':
+          description: User Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              examples:
+                New User Bob Fellow:
+                  value:
+                    id: 2c16a74f-d852-4505-8330-572900cee088
+                    firstName: Bob
+                    lastName: Fellow
+                    email: bob.fellow@gmail.com
+                    emailVerified: false
+                    blocked: false
+        '400':
+          description: Missing Required Information
+        '409':
+          description: Email Already Taken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewUser'
+            examples:
+              Create User Bob Fellow:
+                value:
+                  firstName: Bob
+                  lastName: Fellow
+                  email: bob.fellow@gmail.com
+                  password: bob
+        description: Post the necessary fields for the API to create a new user.
+      description: Create a new user.
+components:
+  schemas:
+    User:
+      title: User
+      type: object
+      description: User is the actor that wants use the chat system
+      x-examples:
+        Alice Smith:
+          id: 142
+          firstName: Alice
+          lastName: Smith
+          email: alice.smith@gmail.com
+          emailVerified: true
+          blocked: false
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the given user.
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        emailVerified:
+          type: boolean
+          description: Set to true if the user's email has been verified.
+        blocked:
+          type: boolean
+          description: Is user's was blocked
+      required:
+        - id
+        - firstName
+        - lastName
+        - email
+        - emailVerified
+        - blocked
+    NewUser:
+      title: NewUser
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - firstName
+        - lastName
+        - email
+        - password
+    BlockUser:
+      title: BlockUser
+      type: object
+      properties:
+        blocked:
+          type: boolean
+    UpdatedUser:
+      title: UpdatedUser
+      type: object
+      properties:
+        id:
+          type: string
+        blocked:
+          type: boolean
