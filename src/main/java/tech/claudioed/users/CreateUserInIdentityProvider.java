@@ -6,6 +6,8 @@ import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import org.keycloak.OAuth2Constants;
@@ -24,6 +26,8 @@ import tech.claudioed.users.infra.IdentityProviderConfig;
 import javax.ws.rs.core.Response;
 
 public class CreateUserInIdentityProvider extends AbstractVerticle {
+
+  private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
   private Keycloak keycloak;
 
@@ -45,29 +49,34 @@ public class CreateUserInIdentityProvider extends AbstractVerticle {
       }).onSuccess(message -> {
         this.vertx.eventBus().consumer("request.create.user", handler -> {
           var newUser = Json.decodeValue(handler.body().toString(), NewUser.class);
+          LOG.info("Starting user creation in IDP EMAIL: " + newUser.getEmail());
           UserRepresentation kcUser = new UserRepresentation();
           kcUser.setUsername(newUser.getEmail());
           kcUser.setFirstName(newUser.getFirstName());
           kcUser.setLastName(newUser.getLastName());
           kcUser.setEmail(newUser.getEmail());
           kcUser.setEnabled(Boolean.TRUE);
+          LOG.info("Obtaining access token on IDP");
           var accessToken = keycloak.tokenManager().getAccessToken();
+          LOG.info("Token was obtained successfully");
           RealmResource realmResource = keycloak.realm(identityProviderConfig.getRealm());
           UsersResource usersResource = realmResource.users();
+          LOG.info("Creating user resource on IDP EMAIL: "+newUser.getEmail());
           Response response = usersResource.create(kcUser);
-
           var userId = CreatedResponseUtil.getCreatedId(response);
-
+          LOG.info("User resource created successfully on IDP EMAIL: "+newUser.getEmail());
+          LOG.info("Updating user resource credential on IDP EMAIL: "+newUser.getEmail());
           CredentialRepresentation passwordCred = new CredentialRepresentation();
           passwordCred.setTemporary(false);
           passwordCred.setType(CredentialRepresentation.PASSWORD);
           passwordCred.setValue(newUser.getPassword());
           UserResource userResource = usersResource.get(userId);
           userResource.resetPassword(passwordCred);
+          LOG.info("User resource credential updated successfully on IDP EMAIL: "+newUser.getEmail());
           var userData = CreatedUser
             .createNew(userId, newUser.getFirstName(), newUser.getLastName(),
               newUser.getEmail());
-
+          LOG.info("User created successfully in IDP EMAIL: " + newUser.getEmail());
           handler.reply(Json.encode(userData));
         });
         startPromise.complete();
@@ -79,9 +88,7 @@ public class CreateUserInIdentityProvider extends AbstractVerticle {
     ConfigStoreOptions fileStore = new ConfigStoreOptions()
       .setType("file")
       .setConfig(new JsonObject().put("path", "src/main/resources/config.json"));
-
     ConfigRetrieverOptions options = new ConfigRetrieverOptions().addStore(fileStore);
-
     ConfigRetriever retriever = ConfigRetriever.create(vertx, options);
     return retriever.getConfig();
   }

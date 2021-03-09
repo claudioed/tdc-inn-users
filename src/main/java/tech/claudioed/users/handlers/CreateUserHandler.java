@@ -39,7 +39,6 @@ public class CreateUserHandler implements Handler<RoutingContext> {
         "INSERT INTO users (id, first_name, last_name, email, email_verified, blocked)  VALUES ( #{id}, #{first_name}, #{last_name}, #{email}, #{email_verified}, #{blocked} )")
       .mapFrom(
         UserParametersMapper.INSTANCE);
-
     this.vertx.eventBus().request("request.create.user",Json.encode(newUser)).onSuccess(message ->{
       var userData = Json.decodeValue(message.body().toString(), CreatedUser.class);
       var user = userData.toData();
@@ -48,17 +47,17 @@ public class CreateUserHandler implements Handler<RoutingContext> {
           rc.response().putHeader("content-type", "application/json; charset=utf-8")
             .setStatusCode(201).end(user.toJson().encode());
         } else {
-          LOG.error("No rows affected");
+          LOG.error("User was not created ID:" + user.getId());
           rc.response().putHeader("content-type", "application/json; charset=utf-8")
             .setStatusCode(500).end(new JsonObject().encode());
         }
       }).onFailure(err -> {
-        LOG.error("Error to create use in database " + err);
+        LOG.error("Error to execute instruction in database ", err);
         rc.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(400)
           .end();
       });
     }).onFailure(err ->{
-      LOG.error("Error in Identity Provider integration");
+      LOG.error("Error on Identity Provider integration");
       rc.response().putHeader("content-type", "application/json; charset=utf-8")
         .setStatusCode(500).end(new JsonObject().encode());
     });

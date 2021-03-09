@@ -28,6 +28,7 @@ public class UpdateUserHandler implements Handler<RoutingContext> {
   public void handle(RoutingContext rc) {
     var data = rc.getBody();
     var userId = rc.pathParam("userId");
+    LOG.info("Updating user with id" + userId);
     var newUserData = Json.decodeValue(data, UpdateUser.class);
     SqlTemplate<UserData, SqlResult<Void>> updateTemplate = SqlTemplate
       .forUpdate(client,
@@ -36,17 +37,17 @@ public class UpdateUserHandler implements Handler<RoutingContext> {
     var updateValue = new UserData(newUserData.getBlocked(), userId);
     updateTemplate.execute(updateValue).onSuccess(result -> {
         if (result.rowCount() > 0) {
+          LOG.info("User updated successfully ID:" + userId);
           rc.response().putHeader("content-type", "application/json; charset=utf-8")
             .setStatusCode(200).end(Json.encode(UpdatedUser.createNew(userId,newUserData.getBlocked())));
         } else {
-          LOG.error("No rows affected");
+          LOG.error("User was not updated ID:" + userId);
           rc.response().putHeader("content-type", "application/json; charset=utf-8")
             .setStatusCode(500).end(new JsonObject().encode());
         }
       }).onFailure(err -> {
-        LOG.error("Error to create use in database " + err);
-        rc.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(400)
-          .end();
+        LOG.error("User update fail, error to execute instruction ID" + userId,err);
+        rc.response().putHeader("content-type", "application/json; charset=utf-8").setStatusCode(400).end();
       });
   }
 

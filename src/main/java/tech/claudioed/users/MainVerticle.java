@@ -34,33 +34,26 @@ public class MainVerticle extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> startPromise) {
-
     initConfig().compose(cfg ->{
       this.datasourceConfig = new DatasourceConfig(cfg.getJsonObject("database", new JsonObject()));
-
       PgConnectOptions connectOptions = new PgConnectOptions()
         .setPort(this.datasourceConfig.getPort())
         .setHost(this.datasourceConfig.getHost())
         .setDatabase(this.datasourceConfig.getDatabase())
         .setUser(this.datasourceConfig.getUser())
         .setPassword(this.datasourceConfig.getPassword());
-
       PoolOptions poolOptions = new PoolOptions()
         .setMaxSize(5);
-
       PgPool client = PgPool.pool(this.vertx,connectOptions, poolOptions);
-
       Future<Void> builderPromise = RouterBuilder.create(vertx, "src/main/resources/oas.yaml")
         .compose(builder -> {
           builder.operation("get-users-userId").handler(new FindUserHandler(client));
           builder.operation("create-user").handler(new CreateUserHandler(client, vertx));
           builder.operation("update-user").handler(new UpdateUserHandler(client));
-
           var router = builder.createRouter();
           router.errorHandler(400, ctx -> {
             LOG.error("Bad Request", ctx.failure());
           });
-
           // Infra endpoints
           router.route("/metrics").handler(PrometheusScrapingHandler.create());
           var healthCheckHandler = HealthCheckHandler.create(this.vertx);
@@ -74,12 +67,10 @@ public class MainVerticle extends AbstractVerticle {
               }
             }));
           router.route("/health").handler(healthCheckHandler);
-
           var server = vertx.createHttpServer(new HttpServerOptions().setPort(9090))
             .requestHandler(router);
           return server.listen().mapEmpty();
         });
-
       var updateDbFuture = updateDB().onComplete((Handler<AsyncResult<Void>>) builderPromise).onComplete(startPromise);
       return updateDbFuture;
     }).mapEmpty();
@@ -99,9 +90,7 @@ public class MainVerticle extends AbstractVerticle {
     ConfigStoreOptions fileStore = new ConfigStoreOptions()
       .setType("file")
       .setConfig(new JsonObject().put("path", "src/main/resources/config.json"));
-
     ConfigRetrieverOptions options = new ConfigRetrieverOptions().addStore(fileStore);
-
     ConfigRetriever retriever = ConfigRetriever.create(vertx, options);
     return retriever.getConfig();
   }
