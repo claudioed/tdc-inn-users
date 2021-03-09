@@ -34,8 +34,6 @@ jobs:
     name: Publish - Docker Hub
     runs-on: ubuntu-18.04
     needs: [build]
-    env:
-      REPO: ${{ secrets.DOCKER_REPO }}
 
     steps:
       -
@@ -48,6 +46,5 @@ jobs:
         name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: .
           push: true
-          tags: user/app:latest
+          tags: ${{ secrets.DOCKER_REPO }}:latest
