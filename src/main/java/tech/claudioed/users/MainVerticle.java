@@ -30,6 +30,7 @@ import tech.claudioed.users.handlers.FindUserHandler;
 public class MainVerticle extends AbstractVerticle {
 
   Logger LOG = LoggerFactory.getLogger(this.getClass());
+
   private DatasourceConfig datasourceConfig;
 
   @Override
@@ -87,6 +88,8 @@ public class MainVerticle extends AbstractVerticle {
   }
 
   public Future<JsonObject> initConfig(){
+    var configPath = System.getenv("VERTX_CONFIG_PATH");
+    LOG.info("Config Path: " + configPath);
     ConfigStoreOptions fileStore = new ConfigStoreOptions()
       .setType("file")
       .setConfig(new JsonObject().put("path", "src/main/resources/config.json"));
