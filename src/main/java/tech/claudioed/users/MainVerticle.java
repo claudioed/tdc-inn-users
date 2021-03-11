@@ -46,7 +46,8 @@ public class MainVerticle extends AbstractVerticle {
       PoolOptions poolOptions = new PoolOptions()
         .setMaxSize(5);
       PgPool client = PgPool.pool(this.vertx,connectOptions, poolOptions);
-      Future<Void> builderPromise = RouterBuilder.create(vertx, "src/main/resources/oas.yaml")
+      LOG.info("OAS: " + cfg.getString("openAPI"));
+      Future<Void> builderPromise = RouterBuilder.create(vertx, cfg.getString("openAPI"))
         .compose(builder -> {
           builder.operation("get-users-userId").handler(new FindUserHandler(client));
           builder.operation("create-user").handler(new CreateUserHandler(client, vertx));

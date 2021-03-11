@@ -7,6 +7,7 @@ RUN mvn -f /home/app/pom.xml clean package
 # Package stage
 #
 FROM openjdk:11-jre-slim
+COPY --from=build /home/app/src/main/resources/oas.yaml /tmp/oas/oas.yaml
 COPY --from=build /home/app/target/*-fat.jar /usr/local/lib/app.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/usr/local/lib/app.jar"]

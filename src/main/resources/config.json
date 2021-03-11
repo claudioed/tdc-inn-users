@@ -13,5 +13,6 @@
     "client_secret" : "0d03f8fc-352e-49e8-b7e0-2bc06a36b268",
     "user" : "admin",
     "password" : "admin"
-  }
+  },
+  "openAPI" : "src/main/resources/oas.yaml"
 }
