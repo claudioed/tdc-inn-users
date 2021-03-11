@@ -36,6 +36,7 @@ public class CreateUserInIdentityProvider extends AbstractVerticle {
     initConfig().onSuccess(cfg ->{
       var identityProviderConfig = new IdentityProviderConfig(cfg.getJsonObject("idp"));
       this.vertx.executeBlocking(handler -> {
+        LOG.info("Creating Identity Provider Client...");
         this.keycloak = KeycloakBuilder.builder()
           .serverUrl(identityProviderConfig.getServerUrl())
           .realm(identityProviderConfig.getRealm())
@@ -45,6 +46,7 @@ public class CreateUserInIdentityProvider extends AbstractVerticle {
           .username(identityProviderConfig.getUser())
           .password(identityProviderConfig.getPassword())
           .build();
+        LOG.info("Identity Provider Client created successfully");
         handler.complete(keycloak);
       }).onSuccess(message -> {
         this.vertx.eventBus().consumer("request.create.user", handler -> {
