@@ -62,6 +62,7 @@ public class CreateUserInIdentityProvider extends AbstractVerticle {
           try {
             var accessToken = keycloak.tokenManager().getAccessToken();
           }catch (Exception e){
+            LOG.error("IDP error ", e);
             handler.fail(3002,"Error to obtain token connection");
             return;
           }
