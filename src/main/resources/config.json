@@ -10,7 +10,7 @@
     "serverUrl" : "http://localhost:8080/auth",
     "realm": "tdc-innovation",
     "client_id" : "realm-management",
-    "client_secret" : "0d03f8fc-352e-49e8-b7e0-2bc06a36b268",
+    "client_secret" : "686dcb6c-0022-4c55-b1c4-d3e801ea4324",
     "user" : "admin",
     "password" : "admin"
   },

@@ -59,12 +59,21 @@ public class CreateUserInIdentityProvider extends AbstractVerticle {
           kcUser.setEmail(newUser.getEmail());
           kcUser.setEnabled(Boolean.TRUE);
           LOG.info("Obtaining access token on IDP");
-          var accessToken = keycloak.tokenManager().getAccessToken();
+          try {
+            var accessToken = keycloak.tokenManager().getAccessToken();
+          }catch (Exception e){
+            handler.fail(3002,"Error to obtain token connection");
+            return;
+          }
           LOG.info("Token was obtained successfully");
           RealmResource realmResource = keycloak.realm(identityProviderConfig.getRealm());
           UsersResource usersResource = realmResource.users();
           LOG.info("Creating user resource on IDP EMAIL: "+newUser.getEmail());
           Response response = usersResource.create(kcUser);
+          if (response.getStatus() != 201){
+            handler.fail(3001,"Error to create user in IDP");
+            return;
+          }
           var userId = CreatedResponseUtil.getCreatedId(response);
           LOG.info("User resource created successfully on IDP EMAIL: "+newUser.getEmail());
           LOG.info("Updating user resource credential on IDP EMAIL: "+newUser.getEmail());
