@@ -1,15 +1,22 @@
 package tech.claudioed.users;
 
+import io.jaegertracing.Configuration;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.tracing.TracingPolicy;
+import io.vertx.tracing.opentracing.OpenTracingTracer;
+import io.vertx.tracing.opentracing.OpenTracingUtil;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.Keycloak;
@@ -29,10 +36,15 @@ public class CreateUserInIdentityProvider extends AbstractVerticle {
 
   private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
+  private final DeliveryOptions deliveryOptions = new DeliveryOptions().setTracingPolicy(TracingPolicy.ALWAYS);
+
   private Keycloak keycloak;
+
+  private Tracer tracer;
 
   @Override
   public void start(Promise<Void> startPromise) {
+    this.tracer = Configuration.fromEnv().getTracer();
     initConfig().onSuccess(cfg ->{
       var identityProviderConfig = new IdentityProviderConfig(cfg.getJsonObject("idp"));
       this.vertx.executeBlocking(handler -> {
@@ -52,6 +64,10 @@ public class CreateUserInIdentityProvider extends AbstractVerticle {
         this.vertx.eventBus().consumer("request.create.user", handler -> {
           var newUser = Json.decodeValue(handler.body().toString(), NewUser.class);
           LOG.info("Starting user creation in IDP EMAIL: " + newUser.getEmail());
+          Span span = tracer.buildSpan("create-user-idp")
+            .withTag("email", newUser.getEmail())
+            .start();
+          OpenTracingUtil.setSpan(span);
           UserRepresentation kcUser = new UserRepresentation();
           kcUser.setUsername(newUser.getEmail());
           kcUser.setFirstName(newUser.getFirstName());
@@ -89,7 +105,8 @@ public class CreateUserInIdentityProvider extends AbstractVerticle {
             .createNew(userId, newUser.getFirstName(), newUser.getLastName(),
               newUser.getEmail());
           LOG.info("User created successfully in IDP EMAIL: " + newUser.getEmail());
-          handler.reply(Json.encode(userData));
+          span.finish();
+          handler.reply(Json.encode(userData),this.deliveryOptions);
         });
         startPromise.complete();
       });

@@ -6,6 +6,7 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
+import io.vertx.tracing.opentracing.OpenTracingOptions;
 
 public class Application {
 
@@ -16,7 +17,8 @@ public class Application {
     Vertx vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
       new MicrometerMetricsOptions()
         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-        .setEnabled(true)));
+        .setEnabled(true))
+      .setTracingOptions(new OpenTracingOptions()));
     vertx.deployVerticle(new MainVerticle());
     vertx.deployVerticle(new CreateUserInIdentityProvider());
     LOG.info("Users deployment was started successfully");

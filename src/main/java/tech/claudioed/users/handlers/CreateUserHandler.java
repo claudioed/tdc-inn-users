@@ -2,10 +2,12 @@ package tech.claudioed.users.handlers;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.tracing.TracingPolicy;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.SqlResult;
@@ -25,6 +27,8 @@ public class CreateUserHandler implements Handler<RoutingContext> {
 
   private final Vertx vertx;
 
+  private final DeliveryOptions deliveryOptions = new DeliveryOptions().setTracingPolicy(TracingPolicy.ALWAYS);
+
   public CreateUserHandler(PgPool client, Vertx vertx) {
     this.client = client;
     this.vertx = vertx;
@@ -39,7 +43,7 @@ public class CreateUserHandler implements Handler<RoutingContext> {
         "INSERT INTO users (id, first_name, last_name, email, email_verified, blocked)  VALUES ( #{id}, #{first_name}, #{last_name}, #{email}, #{email_verified}, #{blocked} )")
       .mapFrom(
         UserParametersMapper.INSTANCE);
-    this.vertx.eventBus().request("request.create.user",Json.encode(newUser)).onSuccess(message ->{
+    this.vertx.eventBus().request("request.create.user",Json.encode(newUser),this.deliveryOptions).onSuccess(message ->{
       var userData = Json.decodeValue(message.body().toString(), CreatedUser.class);
       var user = userData.toData();
       insertTemplate.execute(user).onSuccess(result -> {
