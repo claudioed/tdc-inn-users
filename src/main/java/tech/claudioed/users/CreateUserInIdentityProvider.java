@@ -64,7 +64,7 @@ public class CreateUserInIdentityProvider extends AbstractVerticle {
         this.vertx.eventBus().consumer("request.create.user", handler -> {
           var newUser = Json.decodeValue(handler.body().toString(), NewUser.class);
           LOG.info("Starting user creation in IDP EMAIL: " + newUser.getEmail());
-          Span span = tracer.buildSpan("create-user-idp")
+          Span span = tracer.buildSpan("create-user-idp").asChildOf(OpenTracingUtil.getSpan())
             .withTag("email", newUser.getEmail())
             .start();
           OpenTracingUtil.setSpan(span);
