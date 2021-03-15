@@ -68,6 +68,7 @@ public class CreateUserInIdentityProvider extends AbstractVerticle {
             .withTag("email", newUser.getEmail())
             .start();
           OpenTracingUtil.setSpan(span);
+          tracer.activateSpan(span);
           UserRepresentation kcUser = new UserRepresentation();
           kcUser.setUsername(newUser.getEmail());
           kcUser.setFirstName(newUser.getFirstName());
