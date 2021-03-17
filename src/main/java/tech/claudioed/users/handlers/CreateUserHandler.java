@@ -1,5 +1,6 @@
 package tech.claudioed.users.handlers;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -9,6 +10,7 @@ import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.tracing.TracingPolicy;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.micrometer.backends.BackendRegistries;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.SqlResult;
 import io.vertx.sqlclient.templates.SqlTemplate;
@@ -21,6 +23,8 @@ import java.util.UUID;
 
 public class CreateUserHandler implements Handler<RoutingContext> {
 
+  private static final String NEW_USERS_METRIC = "new_users";
+
   private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
   private final PgPool client;
@@ -28,6 +32,8 @@ public class CreateUserHandler implements Handler<RoutingContext> {
   private final Vertx vertx;
 
   private final DeliveryOptions deliveryOptions = new DeliveryOptions().setTracingPolicy(TracingPolicy.ALWAYS);
+
+  private final MeterRegistry meterRegistry = BackendRegistries.getDefaultNow();
 
   public CreateUserHandler(PgPool client, Vertx vertx) {
     this.client = client;
@@ -46,6 +52,7 @@ public class CreateUserHandler implements Handler<RoutingContext> {
     this.vertx.eventBus().request("request.create.user",Json.encode(newUser),this.deliveryOptions).onSuccess(message ->{
       var userData = Json.decodeValue(message.body().toString(), CreatedUser.class);
       var user = userData.toData();
+      this.meterRegistry.counter(NEW_USERS_METRIC,"email_domain",emailDomain(user.getEmail())).increment();
       insertTemplate.execute(user).onSuccess(result -> {
         if (result.rowCount() > 0) {
           rc.response().putHeader("content-type", "application/json; charset=utf-8")
@@ -65,6 +72,11 @@ public class CreateUserHandler implements Handler<RoutingContext> {
       rc.response().putHeader("content-type", "application/json; charset=utf-8")
         .setStatusCode(500).end(new JsonObject().encode());
     });
+  }
+
+  private String emailDomain(String email){
+    var split = email.split("@");
+    return split[1];
   }
 
 }
